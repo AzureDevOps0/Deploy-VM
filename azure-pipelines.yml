@@ -53,5 +53,7 @@ stages:
             artifact: terraform-config
           - script: ls -la $(Pipeline.Workspace)/terraform-config
             displayName: 'List extracted files'
+          - script: cd $(Pipeline.Workspace)/terraform-config && terraform init -reconfigure
+            displayName: Initialize Terraform Backend
           - script: cd $(Pipeline.Workspace)/terraform-config && terraform apply -auto-approve
             displayName: Apply Terraform Configuration
