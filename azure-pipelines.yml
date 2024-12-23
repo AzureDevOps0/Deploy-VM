@@ -25,3 +25,18 @@ steps:
     provider: 'azurerm'
     command: 'plan'
     environmentServiceNameAzureRM: 'deploy-Vm'
+
+jobs:
+- deployment: DeployToProduction
+  displayName: 'Deploy to Production'
+  environment: 'production' # Reference to the environment with the approval
+  strategy:
+    runOnce:
+      deploy:
+        steps:
+        - task: TerraformTaskV4@4
+          displayName: Apply
+          inputs:
+            provider: 'azurerm'
+            command: 'apply'
+            environmentServiceNameAzureRM: 'deploy-Vm'
