@@ -4,39 +4,45 @@ trigger:
 pool:
   vmImage: ubuntu-latest
 
-steps:
-- task: ms-devlabs.custom-terraform-tasks.custom-terraform-installer-task.TerraformInstaller@1
-  displayName: Install-Terraform
-  inputs:
-    terraformVersion: 'latest'
-- task: TerraformTaskV4@4
-  displayName: Initialize-Provider
-  inputs:
-    provider: 'azurerm'
-    command: 'init'
-    backendServiceArm: 'deploy-Vm'
-    backendAzureRmResourceGroupName: 'Safi_rg'
-    backendAzureRmStorageAccountName: 'tfstatefilessacloud'
-    backendAzureRmContainerName: 'tfstatefile'
-    backendAzureRmKey: 'terraform.tfstatefile'
-- task: TerraformTaskV4@4
-  displayName: Plan
-  inputs:
-    provider: 'azurerm'
-    command: 'plan'
-    environmentServiceNameAzureRM: 'deploy-Vm'
+stages:
+- stage: Build
+  jobs:
+  - job: BuildJob
+    steps:
+    - task: ms-devlabs.custom-terraform-tasks.custom-terraform-installer-task.TerraformInstaller@1
+      displayName: Install-Terraform
+      inputs:
+        terraformVersion: 'latest'
+    - task: TerraformTaskV4@4
+      displayName: Initialize-Provider
+      inputs:
+        provider: 'azurerm'
+        command: 'init'
+        backendServiceArm: 'deploy-Vm'
+        backendAzureRmResourceGroupName: 'Safi_rg'
+        backendAzureRmStorageAccountName: 'tfstatefilessacloud'
+        backendAzureRmContainerName: 'tfstatefile'
+        backendAzureRmKey: 'terraform.tfstatefile'
+    - task: TerraformTaskV4@4
+      displayName: Plan
+      inputs:
+        provider: 'azurerm'
+        command: 'plan'
+        environmentServiceNameAzureRM: 'deploy-Vm'
 
-jobs:
-- deployment: DeployToProduction
-  displayName: 'Deploy to Production'
-  environment: 'production' # Reference to the environment with the approval
-  strategy:
-    runOnce:
-      deploy:
-        steps:
-        - task: TerraformTaskV4@4
-          displayName: Apply
-          inputs:
-            provider: 'azurerm'
-            command: 'apply'
-            environmentServiceNameAzureRM: 'deploy-Vm'
+- stage: Deploy
+  dependsOn: Build
+  jobs:
+  - deployment: DeployToProduction
+    displayName: 'Deploy to Production'
+    environment: 'production' # Reference to the environment with the approval
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: TerraformTaskV4@4
+            displayName: Apply
+            inputs:
+              provider: 'azurerm'
+              command: 'apply'
+              environmentServiceNameAzureRM: 'deploy-Vm'
