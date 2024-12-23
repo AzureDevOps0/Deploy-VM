@@ -14,7 +14,7 @@ stages:
       inputs:
         terraformVersion: '1.3.5'  # specify the version here
     - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV4@4
-      displayName: 'Terraform : azurerm'
+      displayName: InitJob
       inputs:
         backendAzureRmUseEnvironmentVariablesForAuthentication: false
         backendAzureRmUseEntraIdForAuthentication: false
@@ -24,7 +24,7 @@ stages:
         backendAzureRmContainerName: tfstatefile
         backendAzureRmKey: terraform.tfstatefile
     - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV4@4
-      displayName: 'Terraform : azurerm'
+      displayName: PlanJob
       inputs:
         command: plan
         environmentServiceNameAzureRM: 'deploy-Vm'
@@ -49,7 +49,7 @@ stages:
   - job: TerraformApplyJob
     steps:
     - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV4@4
-      displayName: 'Terraform : azurerm'
+      displayName: ApplyJob
       inputs:
         command: apply
         environmentServiceNameAzureRM: 'deploy-Vm'
