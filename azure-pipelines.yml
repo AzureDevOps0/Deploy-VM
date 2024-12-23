@@ -29,6 +29,19 @@ stages:
         provider: 'azurerm'
         command: 'plan'
         environmentServiceNameAzureRM: 'deploy-Vm'
+    - task: ArchiveFiles@2
+      displayName: 'Archive files'
+      inputs:
+        rootFolderOrFile: '$(Build.ArtifactStagingDirectory)'
+        includeRootFolder: false
+        archiveType: 'zip'
+        archiveFile: '$(Build.ArtifactStagingDirectory)/artifacts.zip'
+        replaceExistingArchive: true
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Artifact: drop'
+      inputs:
+        artifactName: 'drop'
+        targetPath: '$(Build.ArtifactStagingDirectory)/artifacts.zip'
 
 - stage: Deploy
   dependsOn: Build
@@ -40,9 +53,17 @@ stages:
       runOnce:
         deploy:
           steps:
+          - download: current
+            artifact: drop
+          - task: ExtractFiles@1
+            displayName: 'Extract files'
+            inputs:
+              archiveFilePatterns: '$(Pipeline.Workspace)/drop/artifacts.zip'
+              destinationFolder: '$(Pipeline.Workspace)/extracted'
           - task: TerraformTaskV4@4
             displayName: Apply
             inputs:
               provider: 'azurerm'
               command: 'apply'
               environmentServiceNameAzureRM: 'deploy-Vm'
+              commandOptions: '$(Pipeline.Workspace)/extracted'
