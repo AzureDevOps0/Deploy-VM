@@ -2,76 +2,58 @@ trigger:
 - main
 
 pool:
-  WindowsAgent: agent-1
-
-variables:
-  ARM_CLIENT_ID: $(servicePrincipalId)
-  ARM_CLIENT_SECRET: $(servicePrincipalKey)
-  ARM_SUBSCRIPTION_ID: $(subscriptionId)
-  ARM_TENANT_ID: $(tenantId)
+  name: WindowsAgent
 
 stages:
-- stage: Build
+- stage: TerraformPlan
   jobs:
-  - job: BuildJob
+  - job: TerraformPlanJob
     steps:
-    - task: ms-devlabs.custom-terraform-tasks.custom-terraform-installer-task.TerraformInstaller@1
-      displayName: Install-Terraform
+    - task: JasonBJohnson.azure-pipelines-tasks-terraform.azure-pipelines-tasks-terraform-installer.TerraformInstaller@2
+      displayName: 'Use Terraform latest'
+    - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV4@4
+      displayName: 'Terraform : azurerm'
       inputs:
-        terraformVersion: 'latest'
-    - task: TerraformTaskV4@4
-      displayName: Initialize-Provider
-      inputs:
-        provider: 'azurerm'
-        command: 'init'
+        backendAzureRmUseEnvironmentVariablesForAuthentication: false
+        backendAzureRmUseEntraIdForAuthentication: false
         backendServiceArm: 'deploy-Vm'
         backendAzureRmResourceGroupName: 'Safi_rg'
-        backendAzureRmStorageAccountName: 'tfstatefilessacloud'
-        backendAzureRmContainerName: 'tfstatefile'
-        backendAzureRmKey: 'terraform.tfstatefile'
-    - task: TerraformTaskV4@4
-      displayName: Plan
+        backendAzureRmStorageAccountName: tfstatefilessacloud
+        backendAzureRmContainerName: tfstatefile
+        backendAzureRmKey: terraform.tfstatefile
+    - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV4@4
+      displayName: 'Terraform : azurerm'
       inputs:
-        provider: 'azurerm'
-        command: 'plan'
+        command: plan
         environmentServiceNameAzureRM: 'deploy-Vm'
-    - script: echo "Copy files to staging directory" && cp -r $(Build.SourcesDirectory)/* $(Build.ArtifactStagingDirectory)
-      displayName: 'Copy files to staging directory'
-    - script: ls -la $(Build.ArtifactStagingDirectory)
-      displayName: 'List files in staging directory'
-    - task: PublishPipelineArtifact@1
-      displayName: 'Publish Pipeline Artifact'
-      inputs:
-        targetPath: '$(Build.ArtifactStagingDirectory)'
-        artifact: 'terraform-config'
+        backendAzureRmUseEnvironmentVariablesForAuthentication: false
+        backendAzureRmUseEntraIdForAuthentication: false
 
-- stage: Deploy
-  dependsOn: Build
+- stage: ManualApproval
+  dependsOn: TerraformPlan
   jobs:
-  - deployment: DeployToProduction
-    displayName: 'Deploy to Production'
-    environment: 'Approvers' # Reference to the environment with the approval
+  - deployment: ManualApprovalDeployment
+    environment: 'Approvers'
     strategy:
       runOnce:
         deploy:
           steps:
-          - download: current
-            artifact: terraform-config
-          - script: ls -la $(Pipeline.Workspace)/terraform-config
-            displayName: 'List extracted files'
-          - script: |
-              cd $(Pipeline.Workspace)/terraform-config
-              export ARM_CLIENT_ID=$(ARM_CLIENT_ID)
-              export ARM_CLIENT_SECRET=$(ARM_CLIENT_SECRET)
-              export ARM_SUBSCRIPTION_ID=$(ARM_SUBSCRIPTION_ID)
-              export ARM_TENANT_ID=$(ARM_TENANT_ID)
-              terraform init -reconfigure
-            displayName: Initialize Terraform Backend
-          - script: |
-              cd $(Pipeline.Workspace)/terraform-config
-              export ARM_CLIENT_ID=$(ARM_CLIENT_ID)
-              export ARM_CLIENT_SECRET=$(ARM_CLIENT_SECRET)
-              export ARM_SUBSCRIPTION_ID=$(ARM_SUBSCRIPTION_ID)
-              export ARM_TENANT_ID=$(ARM_TENANT_ID)
-              terraform apply -auto-approve
-            displayName: Apply Terraform Configuration
+          - task: ManualValidation@0
+            displayName: 'Manual Approval Required'
+            inputs:
+              notifyUsers: 'sasafiyullah@gmail.com'
+              instructions: 'Please review the Terraform plan and approve the deployment.'
+              timeoutInMinutes: '30'  # 30 minutes timeout
+
+- stage: TerraformApply
+  dependsOn: ManualApproval
+  jobs:
+  - job: TerraformApplyJob
+    steps:
+    - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV4@4
+      displayName: 'Terraform : azurerm'
+      inputs:
+        command: apply
+        environmentServiceNameAzureRM: 'deploy-Vm'
+        backendAzureRmUseEnvironmentVariablesForAuthentication: false
+        backendAzureRmUseEntraIdForAuthentication: false
