@@ -64,10 +64,12 @@ stages:
             inputs:
               archiveFilePatterns: '$(Pipeline.Workspace)/drop/artifacts.zip'
               destinationFolder: '$(Pipeline.Workspace)/extracted'
+          - script: ls -la $(Pipeline.Workspace)/extracted
+            displayName: 'List extracted files'
           - task: TerraformTaskV4@4
             displayName: Apply
             inputs:
               provider: 'azurerm'
               command: 'apply'
+              commandOptions: '-chdir=$(Pipeline.Workspace)/extracted'
               environmentServiceNameAzureRM: 'deploy-Vm'
-              commandOptions: '$(Pipeline.Workspace)/extracted'
