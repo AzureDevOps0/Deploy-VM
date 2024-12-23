@@ -29,6 +29,8 @@ stages:
         provider: 'azurerm'
         command: 'plan'
         environmentServiceNameAzureRM: 'deploy-Vm'
+    - script: echo "Copy files to staging directory" && cp -r $(Build.SourcesDirectory)/* $(Build.ArtifactStagingDirectory)
+      displayName: 'Copy files to staging directory'
     - script: ls -la $(Build.ArtifactStagingDirectory)
       displayName: 'List files in staging directory'
     - task: ArchiveFiles@2
