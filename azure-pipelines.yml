@@ -38,12 +38,8 @@ stages:
       runOnce:
         deploy:
           steps:
-          - task: ManualValidation@0
-            displayName: 'Manual Approval Required'
-            inputs:
-              notifyUsers: 'sasafiyullah@gmail.com'
-              instructions: 'Please review the Terraform plan and approve the deployment.'
-              timeoutInMinutes: '30'  # 30 minutes timeout
+          - script: echo "Manual approval required before applying Terraform changes."
+            displayName: 'Awaiting Manual Approval'
 
 - stage: TerraformApply
   dependsOn: ManualApproval
