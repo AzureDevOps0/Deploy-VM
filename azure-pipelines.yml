@@ -35,7 +35,7 @@ stages:
   dependsOn: TerraformPlan
   jobs:
   - deployment: ManualApprovalDeployment
-    environment: 'ApprovalEnv'
+    environment: 'Approvers'
     strategy:
       runOnce:
         deploy:
