@@ -4,6 +4,12 @@ trigger:
 pool:
   vmImage: ubuntu-latest
 
+variables:
+  ARM_CLIENT_ID: $(servicePrincipalId)
+  ARM_CLIENT_SECRET: $(servicePrincipalKey)
+  ARM_SUBSCRIPTION_ID: $(subscriptionId)
+  ARM_TENANT_ID: $(tenantId)
+
 stages:
 - stage: Build
   jobs:
@@ -53,7 +59,19 @@ stages:
             artifact: terraform-config
           - script: ls -la $(Pipeline.Workspace)/terraform-config
             displayName: 'List extracted files'
-          - script: cd $(Pipeline.Workspace)/terraform-config && terraform init -reconfigure
+          - script: |
+              cd $(Pipeline.Workspace)/terraform-config
+              export ARM_CLIENT_ID=$(ARM_CLIENT_ID)
+              export ARM_CLIENT_SECRET=$(ARM_CLIENT_SECRET)
+              export ARM_SUBSCRIPTION_ID=$(ARM_SUBSCRIPTION_ID)
+              export ARM_TENANT_ID=$(ARM_TENANT_ID)
+              terraform init -reconfigure
             displayName: Initialize Terraform Backend
-          - script: cd $(Pipeline.Workspace)/terraform-config && terraform apply -auto-approve
+          - script: |
+              cd $(Pipeline.Workspace)/terraform-config
+              export ARM_CLIENT_ID=$(ARM_CLIENT_ID)
+              export ARM_CLIENT_SECRET=$(ARM_CLIENT_SECRET)
+              export ARM_SUBSCRIPTION_ID=$(ARM_SUBSCRIPTION_ID)
+              export ARM_TENANT_ID=$(ARM_TENANT_ID)
+              terraform apply -auto-approve
             displayName: Apply Terraform Configuration
