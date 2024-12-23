@@ -2,7 +2,7 @@ trigger:
 - main
 
 pool:
-  vmImage: ubuntu-latest
+  WindowsAgent: agent-1
 
 variables:
   ARM_CLIENT_ID: $(servicePrincipalId)
