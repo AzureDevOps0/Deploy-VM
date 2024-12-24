@@ -48,6 +48,10 @@ stages:
   jobs:
   - job: TerraformApplyJob
     steps:
+    - task: JasonBJohnson.azure-pipelines-tasks-terraform.azure-pipelines-tasks-terraform-installer.TerraformInstaller@2
+      displayName: 'Use Terraform latest'
+      inputs:
+        terraformVersion: '1.3.5'
     - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV4@4
       displayName: ApplyJob
       inputs:
