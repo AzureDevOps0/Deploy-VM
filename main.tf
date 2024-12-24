@@ -1,3 +1,5 @@
+#basic VM creation
+
 terraform {
   required_providers {
     azurerm = {
