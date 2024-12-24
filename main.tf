@@ -20,7 +20,7 @@ provider "azurerm" {
 }
 
 resource "azurerm_resource_group" "example" {
-  name     = "Safi_rg"
+  name     = "SSA-Cloud"
   location = "canadacentral"
 }
 
